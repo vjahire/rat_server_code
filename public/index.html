@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Connection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+        #sidebar {
+            width: 200px;
+            border-right: 1px solid #ccc;
+            padding: 10px;
+        }
+        #main {
+            flex-grow: 1;
+            padding: 10px;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+        }
+        #log {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            height: 200px;
+            overflow-y: scroll;
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>Active Devices</h2>
+        <ul id="devices"></ul>
+    </div>
+    <div id="main">
+        <h1>WebSocket Connection</h1>
+        <div id="status">Connecting...</div>
+        <input type="text" id="command" placeholder="Enter command" />
+        <button onclick="sendCommand()">Send Command</button>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        const ws = new WebSocket('ws://' + location.host + '/web');
+
+        ws.onopen = function() {
+            updateStatus('Connected');
+            log('Connected to the server');
+        };
+
+        ws.onclose = function() {
+            updateStatus('Disconnected');
+            log('Disconnected from the server');
+        };
+
+        ws.onerror = function() {
+            updateStatus('Error');
+            log('Error connecting to the server');
+        };
+
+        ws.onmessage = function(event) {
+            log('Received: ' + event.data);
+            const data = JSON.parse(event.data);
+            if (data.type === 'device_list') {
+                updateDeviceList(data.devices);
+            }
+        };
+
+        function sendCommand() {
+            const command = document.getElementById('command').value;
+            ws.send(command);
+            log('Sent: ' + command);
+        }
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += message + '<br>';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(status) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = 'Status: ' + status;
+        }
+
+        function updateDeviceList(devices) {
+            const devicesUl = document.getElementById('devices');
+            devicesUl.innerHTML = '';
+            devices.forEach(device => {
+                const li = document.createElement('li');
+                li.textContent = device;
+                devicesUl.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>
