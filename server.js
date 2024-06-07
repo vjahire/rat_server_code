@@ -55,13 +55,17 @@ webSocketServer.on('connection', (ws) => {
     console.log('Web client connected');
 
     ws.on('message', (message) => {
-        console.log(`Command from web client: ${message}`);
-        // Forward command to all connected devices
-        deviceClients.forEach(deviceWs => {
-            if (deviceWs.ws.readyState === WebSocket.OPEN) {
-                deviceWs.ws.send(message.toString());
-            }
-        });
+        const data = JSON.parse(message);
+        const targetDevice = data.target;
+        const command = data.command;
+
+        console.log(`Command from web client: ${command} to device: ${targetDevice}`);
+
+        // Forward command to the specified device only
+        const deviceWs = Array.from(deviceClients.values()).find(client => client.model === targetDevice)?.ws;
+        if (deviceWs && deviceWs.readyState === WebSocket.OPEN) {
+            deviceWs.send(command.toString());
+        }
     });
 
     ws.on('close', () => {

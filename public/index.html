@@ -30,6 +30,13 @@
             overflow-y: scroll;
             background-color: #e0e0e0;
         }
+        .device-item {
+            cursor: pointer;
+            padding: 5px;
+        }
+        .device-item.selected {
+            background-color: #d0d0ff;
+        }
     </style>
 </head>
 <body>
@@ -47,6 +54,7 @@
 
     <script>
         const ws = new WebSocket('ws://' + location.host + '/web');
+        let selectedDevice = null;
 
         ws.onopen = function() {
             updateStatus('Connected');
@@ -73,8 +81,13 @@
 
         function sendCommand() {
             const command = document.getElementById('command').value;
-            ws.send(command);
-            log('Sent: ' + command);
+            if (selectedDevice) {
+                const message = JSON.stringify({ target: selectedDevice, command: command });
+                ws.send(message);
+                log('Sent to ' + selectedDevice + ': ' + command);
+            } else {
+                log('No device selected');
+            }
         }
 
         function log(message) {
@@ -94,8 +107,17 @@
             devices.forEach(device => {
                 const li = document.createElement('li');
                 li.textContent = device;
+                li.classList.add('device-item');
+                li.onclick = () => selectDevice(device, li);
                 devicesUl.appendChild(li);
             });
+        }
+
+        function selectDevice(device, element) {
+            selectedDevice = device;
+            const items = document.querySelectorAll('.device-item');
+            items.forEach(item => item.classList.remove('selected'));
+            element.classList.add('selected');
         }
     </script>
 </body>
